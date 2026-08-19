@@ -1,0 +1,26 @@
+[
+    {
+        "id": 1,
+        "nombre": "Laptop Gamer",
+        "precio": 1500,
+        "stock": 10
+    },
+    {
+        "id": 2,
+        "nombre": "Mouse Inalambrico",
+        "precio": 30,
+        "stock": 50
+    },
+    {
+        "id": 3,
+        "nombre": "Teclado Mecanico",
+        "precio": 80,
+        "stock": 20
+    },
+    {
+        "id": 4,
+        "nombre": "Monitor 24 Pulgadas",
+        "precio": 250,
+        "stock": 5
+    }
+]
