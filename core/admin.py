@@ -1,2 +1,4 @@
 from django.contrib import admin
-# Modelos a registrar en clases posteriores
+from .models import Task
+
+admin.site.register(Task)
