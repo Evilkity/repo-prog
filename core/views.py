@@ -1,4 +1,5 @@
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Project, Task
@@ -17,6 +18,14 @@ def health_version(request):
 def project_list(request):
     projects = Project.objects.all()
     serializer = ProjectSerializer(projects, many=True)
+    return Response(serializer.data)
+
+
+@api_view(["GET"])
+def project_detail(request, project_id):
+    """Tarea Clase 3: Devuelve el detalle de un proyecto puntual por ID."""
+    project = get_object_or_404(Project, pk=project_id)
+    serializer = ProjectSerializer(project)
     return Response(serializer.data)
 
 
