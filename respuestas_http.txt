@@ -1,0 +1,41 @@
+======================================================================
+REGISTRO DE CÓDIGOS DE ESTADO HTTP CON CURL - TAREA CLASE 4
+======================================================================
+
+CASO 200 OK
+Comando: curl -i http://127.0.0.1:8000/api/tasks/1/
+Primera línea: HTTP/1.1 200 OK
+Cuerpo: {"id":1,"project":1,"title":"Diseñar wireframes","description":"","priority":"alta","status":"pendiente","due_date":null,"tags":[],"created_at":"2026-08-26T20:15:00Z"}
+Observación: Lectura exitosa de una tarea existente por ID.
+
+CASO 201 Created
+Comando: curl -i -X POST http://127.0.0.1:8000/api/tasks/ -H "Content-Type: application/json" -d '{"project": 1, "title": "Nueva tarea de prueba"}'
+Primera línea: HTTP/1.1 201 Created
+Cuerpo: {"id":5,"project":1,"title":"Nueva tarea de prueba","description":"","priority":"media","status":"pendiente","due_date":null,"tags":[],"created_at":"2026-09-16T19:50:00Z"}
+Observación: Creación exitosa de un nuevo recurso. Devuelve los datos con el nuevo ID asignado.
+
+CASO 204 No Content
+Comando: curl -i -X DELETE http://127.0.0.1:8000/api/tasks/5/
+Primera línea: HTTP/1.1 204 No Content
+Cuerpo: (vacío)
+Observación: Eliminación exitosa del recurso creado en el paso anterior.
+
+CASO 400 Bad Request
+Comando: curl -i -X POST http://127.0.0.1:8000/api/tasks/ -H "Content-Type: application/json" -d '{"project": 1}'
+Primera línea: HTTP/1.1 400 Bad Request
+Cuerpo: {"error":true,"detail":{"title":["Este campo es requerido."]}}
+Observación: Falla la validación del serializer por omitir el campo obligatorio title.
+
+CASO 404 Not Found
+Comando: curl -i http://127.0.0.1:8000/api/tasks/999/
+Primera línea: HTTP/1.1 404 Not Found
+Cuerpo: {"error":true,"detail":{"detail":"No se ha encontrado."}}
+Observación: El recurso solicitado no existe en la base de datos.
+
+CASO 500 Internal Server Error
+Comando: curl -i http://127.0.0.1:8000/api/tasks/romper/
+Primera línea: HTTP/1.1 500 Internal Server Error
+Cuerpo: {"error":true,"detail":"Error interno del servidor."}
+Observación: Excepción no controlada capturada por custom_exception_handler en core/exceptions.py.
+
+(Nota: Códigos 401 Unauthorized y 403 Forbidden pendientes para implementación en Clase 6 y 7).
