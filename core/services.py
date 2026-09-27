@@ -1,3 +1,4 @@
+from django.db.models import Count
 import requests
 from django.core.cache import cache
 from django.utils import timezone
@@ -49,3 +50,19 @@ class HolidayService:
     @classmethod
     def is_holiday(cls, some_date) -> bool:
         return str(some_date) in cls.get_holidays(some_date.year)
+
+
+class ProjectService:
+    @staticmethod
+    def project_summary(project) -> dict:
+        """
+        Tarea Clase 5: Resumen de tareas por estado en un proyecto.
+        """
+        counts = project.tasks.values("status").annotate(total=Count("id"))
+        summary = {"pendiente": 0, "en_progreso": 0, "completada": 0, "total": 0}
+        for item in counts:
+            st = item["status"]
+            if st in summary:
+                summary[st] = item["total"]
+        summary["total"] = project.tasks.count()
+        return summary
