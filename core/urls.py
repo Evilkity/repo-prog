@@ -9,5 +9,6 @@ router.register(r"tasks", views.TaskViewSet, basename="task")
 urlpatterns = [
     path("health/", views.health_check, name="health_check"),
     path("health/version/", views.health_version, name="health_version"),
+    path("register/", views.RegisterView.as_view(), name="register"),
     path("", include(router.urls)),
 ]

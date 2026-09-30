@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 
@@ -33,6 +34,7 @@ class Task(models.Model):
     due_date = models.DateField(null=True, blank=True)
     source = models.CharField(max_length=50, blank=True)
     tags = models.ManyToManyField(Tag, blank=True, related_name="tasks")
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True, related_name="tasks")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
