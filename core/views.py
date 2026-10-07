@@ -1,14 +1,17 @@
 from django.http import JsonResponse
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import Project, Task
+from .models import Project, ProjectMembership, Task
+from .permissions import IsProjectAdminOrReadOnly
 from .repositories import TaskRepository
 from .serializers import ProjectSerializer, TaskSerializer, RegisterSerializer
-from .services import TaskService, ProjectService
+from .services import TaskService, ProjectService, MembershipService
 
 
 def health_check(request):
@@ -33,10 +36,35 @@ class RegisterView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class ProjectViewSet(viewsets.ModelViewSet):
-    queryset = Project.objects.all().order_by("id")
-    serializer_class = ProjectSerializer
+class SocialLoginJWTView(APIView):
+    """
+    Después de autenticarse con Google por allauth, genera y devuelve
+    el par de tokens JWT correspondientes al usuario logueado.
+    """
     permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        refresh = RefreshToken.for_user(request.user)
+        return Response({
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+        })
+
+
+class ProjectViewSet(viewsets.ModelViewSet):
+    serializer_class = ProjectSerializer
+    permission_classes = [IsAuthenticated, IsProjectAdminOrReadOnly]
+
+    def get_queryset(self):
+        return MembershipService.projects_for(self.request.user)
+
+    def perform_create(self, serializer):
+        project = serializer.save()
+        ProjectMembership.objects.create(
+            project=project,
+            user=self.request.user,
+            role="admin",
+        )
 
     @action(detail=True, methods=["get"])
     def summary(self, request, pk=None):
@@ -46,17 +74,25 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
 
 class TaskViewSet(viewsets.ModelViewSet):
-    queryset = TaskRepository.get_queryset()
     serializer_class = TaskSerializer
     filterset_fields = ["status", "priority", "project"]
     ordering_fields = ["due_date", "created_at", "priority"]
     search_fields = ["title", "description"]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsProjectAdminOrReadOnly]
 
     def get_queryset(self):
-        return super().get_queryset().filter(owner=self.request.user)
+        return (
+            TaskRepository.get_queryset()
+            .filter(project__memberships__user=self.request.user)
+            .distinct()
+        )
 
     def perform_create(self, serializer):
+        project = serializer.validated_data["project"]
+        if not MembershipService.is_admin(self.request.user, project):
+            raise PermissionDenied(
+                "Solo los administradores del proyecto pueden crear tareas."
+            )
         serializer.save(owner=self.request.user)
 
     @action(detail=True, methods=["post"])
