@@ -1,7 +1,9 @@
+from django.contrib.auth.models import User
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -71,6 +73,45 @@ class ProjectViewSet(viewsets.ModelViewSet):
         project = self.get_object()
         data = ProjectService.project_summary(project)
         return Response(data)
+
+    @action(detail=True, methods=["post"])
+    def add_member(self, request, pk=None):
+        """
+        Tarea Clase 7: Agregar un miembro al proyecto.
+        Solo un administrador del proyecto puede invocar esta acción.
+        """
+        project = self.get_object()
+        if not MembershipService.is_admin(request.user, project):
+            raise PermissionDenied("Solo los administradores del proyecto pueden agregar miembros.")
+
+        username = request.data.get("username")
+        role = request.data.get("role", "miembro")
+
+        if not username:
+            raise ValidationError({"username": ["Este campo es obligatorio."]})
+        if role not in ("admin", "miembro"):
+            raise ValidationError({"role": ["Rol inválido. Debe ser 'admin' o 'miembro'."]})
+
+        user_to_add = get_object_or_404(User, username=username)
+
+        if ProjectMembership.objects.filter(project=project, user=user_to_add).exists():
+            return Response(
+                {"error": True, "detail": "El usuario ya es miembro de este proyecto."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        membership = ProjectMembership.objects.create(
+            project=project,
+            user=user_to_add,
+            role=role,
+        )
+        return Response(
+            {
+                "mensaje": f"Usuario {user_to_add.username} agregado al proyecto con rol {role}.",
+                "membership_id": membership.id,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class TaskViewSet(viewsets.ModelViewSet):
