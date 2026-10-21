@@ -73,8 +73,8 @@ taskflow/
 
 ### 1. Clonar el repositorio y entrar a la carpeta
 ```bash
-git clone https://github.com/Evilkity/taskflow.git
-cd taskflow
+git clone https://github.com/Evilkity/repo-prog.git
+cd repo-prog
 ```
 
 ### 2. Crear y activar el entorno virtual
